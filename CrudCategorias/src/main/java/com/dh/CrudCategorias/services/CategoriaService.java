@@ -1,5 +1,7 @@
 package com.dh.CrudCategorias.services;
 
+
+import com.dh.CrudCategorias.exceptions.ResourceNotFoundException;
 import com.dh.CrudCategorias.models.Categoria;
 import com.dh.CrudCategorias.models.CategoriaDTO;
 import com.dh.CrudCategorias.repositories.CategoriaRepository;
@@ -17,50 +19,35 @@ public class CategoriaService {
     @Autowired
     ObjectMapper mapper;
 
-    public Categoria agregarCategoria(Categoria categoria){
+    public Categoria agregarCategoria(CategoriaDTO categoriaDTO) {
+        Categoria categoria = new Categoria(categoriaDTO);
         return categoriaRepository.save(categoria);
     }
 
-    public void actualizarCategoria(Categoria categoria){
-        guardarCategoria(categoria);
+    public Categoria actualizarCategoria(CategoriaDTO categoriaDTO, Integer id) throws ResourceNotFoundException{
+        Categoria categoria = buscarCategoriaPorId(id);
+        categoria.setTitulo(categoriaDTO.getTitulo());
+        categoria.setDescripcion(categoriaDTO.getDescripcion());
+        categoria.setUrlImagen(categoriaDTO.getUrlImagen());
+
+        return categoriaRepository.save(categoria);
     }
 
-    public void eliminarCategoria(Integer id){
-        categoriaRepository.deleteById(id);
-    }
-/*
-    public Categoria buscarCategoriaPorId(Integer id){
-        Optional<Categoria> categoriaPorEncontrar = categoriaRepository.findById(id);
-        Categoria respuesta = null;
-        if (categoriaPorEncontrar.isPresent()) {
-             Categoria categoria = categoriaPorEncontrar.get();
-             System.out.println(categoriaRepository.findById(id));
-        }
-        else{
-            categoriaPorEncontrar.isEmpty();
-        }
-        return respuesta;
-    }
-*/
-    public CategoriaDTO buscarCategoriaPorId(Integer id){
-        Optional<Categoria> categoriaPorEncontrar = categoriaRepository.findById(id);
-        CategoriaDTO respuesta = null;
-        if (categoriaPorEncontrar.isPresent()){
-            respuesta = mapper.convertValue(categoriaPorEncontrar, CategoriaDTO.class);
-        }else{
-            categoriaPorEncontrar.isEmpty();
-        }
-        return respuesta;
+    public void eliminarCategoria(Integer id) throws ResourceNotFoundException{
+        Categoria categoria = buscarCategoriaPorId(id);
+        categoriaRepository.delete(categoria);
     }
 
-    public Collection<CategoriaDTO> listarCategorias(){
+    public Categoria buscarCategoriaPorId(Integer id) throws ResourceNotFoundException {
+        Categoria categoria = categoriaRepository.findById(id).orElseThrow(()-> new ResourceNotFoundException("No se encontro la categoria con el id: " + id));
+        return categoria;
+    }
+
+    public List<Categoria> listarCategorias(){
         List<Categoria> categoriaList = categoriaRepository.findAll();
-        Set<CategoriaDTO> categoriaDTO = new HashSet<>();
-        for (Categoria categoria : categoriaList){
-            categoriaDTO.add(mapper.convertValue(categoria, CategoriaDTO.class));
-        }
-        return categoriaDTO;
+        return categoriaList;
     }
+
 
     private void guardarCategoria(Categoria categoria){
         categoriaRepository.save(categoria);
